@@ -1,0 +1,115 @@
+﻿
+========================================================================
+Preparação
+========================================================================
+POST /cofres  ->  HTTP 201
+{
+  "id": "47cce2e7-c9bb-4cd6-b779-c2380bc48eb5"
+}
+POST /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/abrir  ->  HTTP 200
+{
+  "detail": "senha-mestra correta"
+}
+POST /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/segredos  ->  HTTP 201
+{
+  "id": "e331e721-9786-4589-9fdb-9b9ceead6e0a"
+}
+POST /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/segredos  ->  HTTP 201
+{
+  "id": "b33a7058-0939-4566-ba1b-37d42d6b8fd9"
+}
+GET /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/segredos  ->  HTTP 200
+[
+  {
+    "id": "e331e721-9786-4589-9fdb-9b9ceead6e0a",
+    "titulo": "Banco produção",
+    "usuario": "admin",
+    "url": "db-prod.interno",
+    "criado_em": "2026-09-17T01:48:24.822865Z",
+    "atualizado_em": "2026-09-17T01:48:24.822865Z"
+  },
+  {
+    "id": "b33a7058-0939-4566-ba1b-37d42d6b8fd9",
+    "titulo": "Banco testes",
+    "usuario": "admin",
+    "url": "db-test.interno",
+    "criado_em": "2026-09-17T01:48:25.098804Z",
+    "atualizado_em": "2026-09-17T01:48:25.098804Z"
+  }
+]
+GET /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/segredos/e331e721-9786-4589-9fdb-9b9ceead6e0a  ->  HTTP 200
+{
+  "id": "e331e721-9786-4589-9fdb-9b9ceead6e0a",
+  "titulo": "Banco produção",
+  "usuario": "admin",
+  "url": "db-prod.interno",
+  "senha": "S3nh@-do-Banco!"
+}
+
+========================================================================
+Teste 1 — Nonces distintos
+========================================================================
+  titulo=Banco produção | nonce=MZJrt++JwXDOpEe5 | criptograma=G2ISjMqd14y7mFe5ePGx
+  titulo=Banco testes | nonce=929kHMylWe+C4Zoq | criptograma=B4nQs+BMiJxLLU92ZpDY
+RESULTADO: APROVADO
+
+========================================================================
+Teste 2 — Senha-mestra incorreta
+========================================================================
+GET /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/segredos/e331e721-9786-4589-9fdb-9b9ceead6e0a  ->  HTTP 401
+{
+  "detail": "senha-mestra incorreta"
+}
+RESULTADO: APROVADO
+
+========================================================================
+Teste 3 — O que o invasor enxerga
+========================================================================
+select titulo, usuario, nonce, criptograma, etiqueta from public.segredos;
+  titulo=Banco produção | usuario=admin | nonce=MZJrt++JwXDOpEe5 | criptograma=G2ISjMqd14y7mFe5ePGx | etiqueta=P8eJo6YDNIVpKTjwXow2Og==
+  titulo=Banco testes | usuario=admin | nonce=929kHMylWe+C4Zoq | criptograma=B4nQs+BMiJxLLU92ZpDY | etiqueta=uHId3ob4vGgClCciqtLX9g==
+RESULTADO: APROVADO
+
+========================================================================
+Teste 4 — Registro adulterado
+========================================================================
+criptograma: G2ISjMqd14y7mFe5ePGx  ->  X2ISjMqd14y7mFe5ePGx
+GET /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/segredos/e331e721-9786-4589-9fdb-9b9ceead6e0a  ->  HTTP 500
+{
+  "detail": "registro adulterado: falha na verificação da etiqueta"
+}
+RESULTADO: APROVADO
+(criptograma original restaurado)
+
+========================================================================
+Teste 5 — Troca de criptogramas entre registros
+========================================================================
+nonce/criptograma/etiqueta copiados de e331e721-9786-4589-9fdb-9b9ceead6e0a (A) para b33a7058-0939-4566-ba1b-37d42d6b8fd9 (B)
+controle — leitura de A:
+GET /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/segredos/e331e721-9786-4589-9fdb-9b9ceead6e0a  ->  HTTP 200
+{
+  "id": "e331e721-9786-4589-9fdb-9b9ceead6e0a",
+  "titulo": "Banco produção",
+  "usuario": "admin",
+  "url": "db-prod.interno",
+  "senha": "S3nh@-do-Banco!"
+}
+leitura de B:
+GET /cofres/47cce2e7-c9bb-4cd6-b779-c2380bc48eb5/segredos/b33a7058-0939-4566-ba1b-37d42d6b8fd9  ->  HTTP 500
+{
+  "detail": "registro adulterado: falha na verificação da etiqueta"
+}
+RESULTADO: APROVADO
+
+========================================================================
+Resumo
+========================================================================
+Teste 1: APROVADO
+Teste 2: APROVADO
+Teste 3: APROVADO
+Teste 4: APROVADO
+Teste 5: APROVADO
+
+cofre de teste: 47cce2e7-c9bb-4cd6-b779-c2380bc48eb5
+segredo A: e331e721-9786-4589-9fdb-9b9ceead6e0a
+segredo B: b33a7058-0939-4566-ba1b-37d42d6b8fd9
