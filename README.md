@@ -39,7 +39,7 @@ Requisitos: Python 3.10 ou superior e um projeto no [Supabase](https://supabase.
 1. Clone o repositório e crie o ambiente virtual:
 
    ```bash
-   git clone https://github.com/USUARIO/cofre-aes.git
+   git clone https://github.com/AdrianoFaleiroGregorio/cofre-aes.git
    cd cofre-aes
    python -m venv .venv
    ```
